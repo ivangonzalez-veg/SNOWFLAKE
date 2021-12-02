@@ -1,0 +1,140 @@
+CREATE OR REPLACE VIEW VEG_DEV.STAGE_RAW.VW_ORDER_ITEMS
+AS
+WITH ORDER_ITEMS AS (
+    SELECT
+        --"dw_id",
+        "dw_run_history_id",
+        "dw_inserted_at",
+        "dw_source",
+        "order":"id"::VARCHAR(2000) "order_id",
+        "couponDiscount",
+        "credited",
+        "creditedQuantity",
+        "date",
+        "declined",
+        "department_id",
+        "discount",
+        "discountAmount",
+        "discounted",
+        "dispenseFee",
+        "fulfilledExternally",
+        "hidden",
+        "id",
+        "inPackage",
+        "insertedAt",
+        "isPackage",
+        "isTaxed",
+        "lineDiscount",
+        "lineDiscountType",
+        "locationId",
+        "lotNumber",
+        "memberDiscount",
+        "minimumPrice",
+        "name",
+        "notRendered",
+        "package_id",
+        "patient_id",
+        "percentDiscounted",
+        "position",
+        "priceIncluded",
+        "product",
+        "productId",
+        "provider_id",
+        "quantity",
+        "refunded",
+        "refundedAt",
+        "refundedQuantity",
+        "returned",
+        "returnedQuantity",
+        "subtotal",
+        "tax",
+        "total",
+        "totalPrice",
+        "unitPrice",
+        "updatedAt",
+        "volumeTiers_tier"
+    FROM STAGE_RAW.ORDER_ITEMS
+),
+ORDER_ITEMS_FROM_ORDERS AS (
+    SELECT
+        --"dw_id",
+        "dw_run_history_id",
+        "dw_inserted_at",
+        "dw_source",
+        ORDERS."id" "order_id",
+        ITEMS.VALUE:"couponDiscount"::NUMERIC(38, 6) "couponDiscount",
+        ITEMS.VALUE:"credited"::BOOLEAN "credited",
+        ITEMS.VALUE:"creditedQuantity"::NUMERIC(38, 6) "creditedQuantity",
+        ITEMS.VALUE:"date"::DATE "date",
+        ITEMS.VALUE:"declined"::BOOLEAN "declined",
+        ITEMS.VALUE:"department_id"::VARCHAR(2000) "department_id",
+        ITEMS.VALUE:"discount"::NUMERIC(38, 6) "discount",
+        ITEMS.VALUE:"discountAmount"::NUMERIC(38, 6) "discountAmount",
+        ITEMS.VALUE:"discounted"::BOOLEAN "discounted",
+        ITEMS.VALUE:"dispenseFee"::NUMERIC(38, 6) "dispenseFee",
+        ITEMS.VALUE:"fulfilledExternally"::BOOLEAN "fulfilledExternally",
+        ITEMS.VALUE:"hidden"::BOOLEAN "hidden",
+        ITEMS.VALUE:"id"::VARCHAR(2000) "id",
+        ITEMS.VALUE:"inPackage"::BOOLEAN "inPackage",
+        ITEMS.VALUE:"insertedAt"::TIMESTAMP_NTZ(9) "insertedAt",
+        ITEMS.VALUE:"isPackage"::BOOLEAN "isPackage",
+        ITEMS.VALUE:"isTaxed"::BOOLEAN "isTaxed",
+        ITEMS.VALUE:"lineDiscount"::NUMERIC(38, 6) "lineDiscount",
+        ITEMS.VALUE:"lineDiscountType"::VARCHAR(2000) "lineDiscountType",
+        ORDERS."locationId",
+        ITEMS.VALUE:"lotNumber"::VARCHAR(2000) "lotNumber",
+        ITEMS.VALUE:"memberDiscount"::NUMERIC(38, 6) "memberDiscount",
+        ITEMS.VALUE:"minimumPrice"::NUMERIC(38, 6) "minimumPrice",
+        ITEMS.VALUE:"name"::VARCHAR(2000) "name",
+        ITEMS.VALUE:"notRendered"::BOOLEAN "notRendered",
+        ITEMS.VALUE:"package":"id"::VARCHAR(2000) "package_id",
+        ITEMS.VALUE:"patient":"id"::VARCHAR(2000) "patient_id",
+        ITEMS.VALUE:"percentDiscounted"::NUMERIC(38, 6) "percentDiscounted",
+        ITEMS.VALUE:"position"::NUMERIC(10, 0) "position",
+        ITEMS.VALUE:"priceIncluded"::BOOLEAN "priceIncluded",
+        PARSE_JSON(ITEMS.VALUE:"product") "product",
+        ITEMS.VALUE:"productId"::VARCHAR(2000) "productId",
+        ITEMS.VALUE:"provider":"id"::VARCHAR(2000) "provider_id",
+        ITEMS.VALUE:"quantity"::NUMERIC(38, 6) "quantity",
+        ITEMS.VALUE:"refunded"::BOOLEAN "refunded",
+        ITEMS.VALUE:"refundedAt"::TIMESTAMP_NTZ(9) "refundedAt",
+        ITEMS.VALUE:"refundedQuantity"::NUMERIC(38, 6) "refundedQuantity",
+        ITEMS.VALUE:"returned"::BOOLEAN "returned",
+        ITEMS.VALUE:"returnedQuantity"::NUMERIC(38, 6) "returnedQuantity",
+        ITEMS.VALUE:"subtotal"::NUMERIC(38, 6) "subtotal",
+        ITEMS.VALUE:"tax"::NUMERIC(38, 6) "tax",
+        ITEMS.VALUE:"total"::NUMERIC(38, 6) "total",
+        ITEMS.VALUE:"totalPrice"::NUMERIC(38, 6) "totalPrice",
+        ITEMS.VALUE:"unitPrice"::NUMERIC(38, 6) "unitPrice",
+        ITEMS.VALUE:"updatedAt"::TIMESTAMP_NTZ(9) "updatedAt",
+        ITEMS.VALUE:"volumeTiers_tier"::VARCHAR(2000) "volumeTiers_tier"
+    FROM STAGE_RAW.ORDERS ORDERS,
+    LATERAL FLATTEN(input=> PARSE_JSON("items")) ITEMS
+)
+SELECT 
+    *
+FROM
+(
+  SELECT 
+      *,
+      ROW_NUMBER() OVER(PARTITION BY "id" ORDER BY "updatedAt" DESC, "dw_inserted_at" DESC) "dw_sequence_number",
+      MD5(
+          NVL(TO_VARCHAR("order_id"), '') || NVL(TO_VARCHAR("couponDiscount"), '') || NVL(TO_VARCHAR("credited"), '') || NVL(TO_VARCHAR("creditedQuantity"), '') || NVL(TO_VARCHAR("date"), '') || NVL(TO_VARCHAR("declined"), '') || 
+          NVL(TO_VARCHAR("department_id"), '') || NVL(TO_VARCHAR("discount"), '') || NVL(TO_VARCHAR("discountAmount"), '') || NVL(TO_VARCHAR("discounted"), '') || NVL(TO_VARCHAR("dispenseFee"), '') || NVL(TO_VARCHAR("fulfilledExternally"), '') || 
+          NVL(TO_VARCHAR("hidden"), '') || NVL(TO_VARCHAR("id"), '') || NVL(TO_VARCHAR("inPackage"), '') || NVL(TO_VARCHAR("insertedAt"), '') || NVL(TO_VARCHAR("isPackage"), '') || NVL(TO_VARCHAR("isTaxed"), '') || 
+          NVL(TO_VARCHAR("lineDiscount"), '') || NVL(TO_VARCHAR("lineDiscountType"), '') || NVL(TO_VARCHAR("locationId"), '') || NVL(TO_VARCHAR("lotNumber"), '') || NVL(TO_VARCHAR("memberDiscount"), '') || NVL(TO_VARCHAR("minimumPrice"), '') || 
+          NVL(TO_VARCHAR("name"), '') || NVL(TO_VARCHAR("notRendered"), '') || NVL(TO_VARCHAR("package_id"), '') || NVL(TO_VARCHAR("patient_id"), '') || NVL(TO_VARCHAR("percentDiscounted"), '') || 
+          NVL(TO_VARCHAR("position"), '') || NVL(TO_VARCHAR("priceIncluded"), '') || NVL(TO_VARCHAR("product"), '') || NVL(TO_VARCHAR("productId"), '') || NVL(TO_VARCHAR("provider_id"), '') || 
+          NVL(TO_VARCHAR("quantity"), '') || NVL(TO_VARCHAR("refunded"), '') || NVL(TO_VARCHAR("refundedAt"), '') || NVL(TO_VARCHAR("refundedQuantity"), '') || NVL(TO_VARCHAR("returned"), '') || 
+          NVL(TO_VARCHAR("returnedQuantity"), '') || NVL(TO_VARCHAR("subtotal"), '') || NVL(TO_VARCHAR("tax"), '') || NVL(TO_VARCHAR("total"), '') || NVL(TO_VARCHAR("totalPrice"), '') || 
+          NVL(TO_VARCHAR("unitPrice"), '') || NVL(TO_VARCHAR("updatedAt"), '') || NVL(TO_VARCHAR("volumeTiers_tier"), '')
+       ) "dw_hash_diff"
+  FROM (
+    SELECT * FROM ORDER_ITEMS
+    UNION ALL
+    SELECT * FROM ORDER_ITEMS_FROM_ORDERS
+  )
+)
+WHERE 
+    "dw_sequence_number" = 1
+;
